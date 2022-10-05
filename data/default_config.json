@@ -1,0 +1,20 @@
+{
+    "startup": {
+        "login": {
+            "username": "tkahrs",
+            "password": "temppass"
+        },
+        "config": "data/config.json"
+    },
+    "universe": {
+        "symbols": [
+            "SPY500",
+            "DOW",
+            "AAPL"
+        ]
+    },
+    "algorithm": "algorithm",
+    "risk": "risk",
+    "entry": "entry?",
+    "docker": "docker?"
+}
