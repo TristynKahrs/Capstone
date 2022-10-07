@@ -1,10 +1,6 @@
 {
     "startup": {
-        "login": {
-            "username": "tkahrs",
-            "password": "temppass"
-        },
-        "config": "data/config.json"
+        "config": "./data/default_config.json"
     },
     "universe": {
         "symbols": [
@@ -13,7 +9,9 @@
             "AAPL"
         ]
     },
-    "algorithm": "algorithm",
+    "algorithm": {
+        "temp_field": 1
+    },
     "risk": "risk",
     "entry": "entry?",
     "docker": "docker?"

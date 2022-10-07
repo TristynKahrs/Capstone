@@ -1,36 +1,37 @@
-from config import startup, apply_default
+from config import startup, get_config
 
-def main():
-    #run cli
+def ignite(config_file = './data/config.json'):
+    default_config = get_config('./data/default_config.json')
+    config_file = './data/' + config_file.replace(' ', '_') + '.json'
     
-    config = startup('./data/config.json')
+    config = startup(config_file)
+    
+    assert(config.__contains__('startup')), 'No startup within configuration file ' + config_file
     
     login = config.get('startup').get('login')
-    if (login.get('username') == '') | (login.get('password') == ''):
-        print('Login information is required, please enter your brokerage account to try again.')
-        exit()
+    if(login is not None and (login.__contains__('username') and login.__contains__('password'))): 
+        username = login.get('username')
+        password = login.get('password')
+        
+        # assert((username != '') & (password != '')), 'Login information is required'
+        
+        
+        # if(__exists__(config.get('config'):
+        #     pass
+        
+        #TODO: make sure all fields are dicts
+        universe = config.get('universe') if config.__contains__('universe') else default_config.get('universe')    
+        algorithm = config.get('algorithm') if config.__contains__('algorithm') else default_config.get('algorithm')
+        risk = config.get('risk') if config.__contains__('risk') else default_config.get('risk')
+        
+        #enter trades
+            #display data
+            #save data
+            #generate reports
+                #json->html->pdf
+            #email reports
     else:
-        #TODO check login info is valid
-        pass
-    
-    print(config)
-    
-    apply_default('./data/config.json')
-    #run universe selection
-    universe = config.get('universe')
-    
-    #run algoritm selection
-    algorithm = config.get('algoritm')
-    
-    #calculate risk
-    risk = config.get('risk')
-    
-    #enter trades
-        #display data
-        #save data
-        #generate reports
-            #json->html->pdf
-        #email reports
+        raise Exception("Login failed")
 
 if __name__ == '__main__':
-    main()
+    ignite()

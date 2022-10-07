@@ -3,39 +3,61 @@ from pathlib import Path
 import os
 from collections import Counter
 
-def startup(config_file: str):
+def startup(config_file: str = './data/config.json'):
     if __exists__(config_file):
-        print("Using existing configuration")
+        print("Using existing configuration: " + config_file)
         config = get_config(config_file)
-        apply_default(config_file)
     else:
         with open(config_file, 'w') as file:
-            with open('./data/default_config.json', 'r') as default_file:
-                default_config = json.load(default_file)
-            json.dump(default_config, file, indent=4)
-            config = default_config
-        print("Your configuration could not be found, one has been creaded for you")
+            config = {"startup": {"login":{"username": "", "password": ""}, "config": config_file}}
+            json.dump(config, file, indent=4)
+        print("Your configuration could not be found, one has been created for you;\nIt is located at: " + config_file)
     return config
+
+def update_config(config_file: str, field):
+    config = json.load(config_file)
+    config[field.key] = field.value
 
 def __exists__(config_file: str):
     return os.path.isfile(config_file) and os.access(config_file, os.R_OK)
-
-def apply_default(config_file: str):
-    with open('./data/default_config.json', 'r') as default_file:
-        default_config = json.load(default_file)
-    config = get_config(config_file)
-    
-    for key, value in default_config.items():
-        if key not in config:
-            config[key] = value
+   
+def set_config(config):
+    config_file = config['startup']['config']
     with open(config_file, 'w') as file:
-        json.dump(default_config, file, indent=4)
+        json.dump(config, file, indent=4)
     return config
-        
+         
 def get_config(config_file: str):
-    with open(config_file, 'r') as file:
-        config = json.load(file)
-    return config
+    try:
+        with open(config_file, 'r') as file:
+            config = json.load(file)
+        return config
+    except:
+        print("Could not find configuration file " + config_file)
+
+def create_default_config():
+    default_config = {
+        "startup": {
+            "config": "./data/default_config.json"
+        },
+        "universe": {
+            "symbols": [
+                "SPY500",
+                "DOW",
+                "AAPL"
+            ]
+        },
+        "algorithm": {
+            "temp_field": 1
+        },
+        "risk": "risk",
+        "entry": "entry?",
+        "docker": "docker?"
+    }
+    with open(default_config['startup']['config'], 'w') as file:
+        json.dump(default_config, file, indent=4)
+    return default_config
+    
 
 if __name__ == '__main__':
-    startup('config_file')
+    startup('./data/config_file.json')

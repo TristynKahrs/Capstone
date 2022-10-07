@@ -1,5 +1,6 @@
 # My ignores
-config.json
+!default_config.json
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
