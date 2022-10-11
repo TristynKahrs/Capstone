@@ -1,13 +1,9 @@
-from distutils import config
-from sparkplug import ignite
-from config import startup, get_config, set_config, create_default_config
+from bot.sparkplug import ignite
+from bot.config import get_config, create_default_config, Configuration
 from os import system
 
 import os, fnmatch
 
-# config = get_config('./data/config.json')
-
-system('echo off')
 def clearScreen():
     system('cls')
     seperator()
@@ -28,15 +24,24 @@ def prompt(prompt_text: str, fail_text: str):
     return reply
 
 def prompt_number(prompt_text: str, options: list, fail_text: str):
-    pass
     invalid = True
     while invalid:
-        reply = input(prompt_text)
-        if(reply is not None and reply != '' and type(reply) == 'number'):
-            invalid = False
-        else:
+        for i in range(0, len(options)):
+            print(str(i + 1) + ")\t", str(options[i]))
+        print()
+        seperator()
+        try:
+            reply = int(prompt(prompt_text, fail_text))
+            if(isinstance(reply, int) and reply <= len(options)):
+                invalid = False
+            else:
+                print(fail_text)
+        except:
             print(fail_text)
-    return reply
+            seperator()
+            print()
+        
+    return int(reply)
 
 def help():
     clearScreen()
@@ -48,9 +53,10 @@ You may use the following commands:
     """)
     seperator()
     
-def login(config):
+def login(configuration):    
     logged_out = True
     while logged_out:
+        print(configuration)
         print('Please enter your brokerage account information:')
         
         username = prompt('\tEnter username: ', '\t[Username is required]\n')
@@ -59,18 +65,16 @@ def login(config):
         login = {'username': username, 'password': password}
         
         # TODO save login in configuration
-        config_file = config['startup']['config']
+        config_file = configuration.config['startup']['config']
         
         config_update = get_config(config_file)
         config_update['startup']['login'] = login
-        set_config(config_update)
+        configuration.set_config(config_update)
         
         logged_out = False
     clearScreen()
     
-def configs():
-    global config
-    
+def configs(): # TODO make new configs
     def find(pattern, path):
         result = []
         for root, dirs, files in os.walk(path):
@@ -88,28 +92,25 @@ def configs():
         create_default_config()
         
     if(len(found_configs) == 0):
-        found_configs.append(startup()['startup']['config'])
-    
-    for config_file in found_configs:
-        print(config_file.strip('./'))
+        first_config = Configuration()
+        found_configs.append(first_config.config['startup']['config'])
         
-    app_config = startup(found_configs[0])
+    selected_config = prompt_number("Please select a config file: ", found_configs, 'Please choose a number')
+
+    config = Configuration(found_configs[selected_config - 1])
     
-    print()
     seperator()
-    print('Please select a configuration file:')
-    # TODO: MAKE SELECTION
     # clearScreen()
     
-    return app_config
+    return config
 
 def main():
+    system('echo off')
     clearScreen()
-    config = configs()
+    configuration = configs()
 
-    # TODO CHECK THAT CONFIG HAS VALID LOGIN
-    # TODO LOGIN IF NO SET CONFIGURATION HAS NONE
-    # TODO SAVE CONFIGURATION
+    if not configuration.assert_login():
+        login(configuration)
 
     looping = True
     while looping:
@@ -120,19 +121,19 @@ def main():
             help()
             
         elif lower == 'config' or lower == 'c':
-            config = configs()
+            configuration = configs()
             
         elif lower == 'login' or lower == 'l':
-            login(config)
+            login(configuration)
                     
         elif lower == 'quit' or lower == 'q':
             looping = False
             
         elif lower == 'run' or lower == 'r':
-            try:
-                ignite(config.__getattribute__(config))
-            except Exception:
-                print("please login first")
+            # try:
+            ignite(configuration.config_file)
+            # except Exception:
+            #     print("please login first")
                 
         else:
             print('Please enter a valid command; Use "help" or "h" for help')
