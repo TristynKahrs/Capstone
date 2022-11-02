@@ -1,11 +1,11 @@
-from config import Configuration, get_config
+from config import Configuration as cf
 from universe import Universe
+from algorithm import Algorithm
 
 def ignite(config_file = './data/config.json'):
-    default_config = get_config('./data/default_config.json')
-    config_file = config_file.replace(' ', '_')
+    default_config = cf.create_default_config()
     
-    configuration = Configuration(config_file)
+    configuration = cf(config_file)
     config = configuration.config
     
     #TODO: make sure all fields are dicts
@@ -13,14 +13,11 @@ def ignite(config_file = './data/config.json'):
     algorithm_config = config['algorithm'] if 'algorithm' in config else default_config.get('algorithm')
     risk_config = config['risk'] if 'risk' in config else default_config.get('risk')
     
-    universe = Universe(universe_config)
-    if 'symbols' in universe_config:
-        universe = Universe(universe_config)
-    elif 'filters' in universe_config:
-        pass # TODO: implement a universe class here
+    universe = Universe(universe_config).symbols
+    print(universe)
     
-    universe.set_symbols(universe_config['symbols'])
-    print('In Sparkplug:', universe.get_symbols())
+    algorithm = Algorithm(universe, algorithm_config)
+    print(algorithm)
     
     #enter trades
         #display data

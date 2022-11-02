@@ -1,1 +1,4 @@
 # pip libraries go here
+numpy
+pandas
+ccxt
