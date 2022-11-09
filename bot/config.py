@@ -1,7 +1,7 @@
 import json
 import os
 
-class Configuration:
+class Configuration: # TODO: check if there is a singular config file
     def __init__(self, config_file: str = './data/config.json') -> None: # TODO handle NoneType error TODO inherit from dict?
         self.create_default_config()
         config_file = config_file.replace(' ', '_')
@@ -22,23 +22,14 @@ class Configuration:
                 json.dump(self.config, file, indent=4)
             print("Your configuration could not be found, one has been created for you;\nIt is located at: " + config_file)
           
-    def set_config(self, config):
+    def set_config(self, config) -> json:
         config_file = config['startup']['config']
         with open(config_file, 'w') as file:
             json.dump(config, file, indent=4)
         self.config = config
         return config
     
-    # what is yield tf
-    # def get_field(self, field: str):
-    #     for key, value in self.config.items():
-    #         print(key, value)
-    #         if isinstance(value, dict):
-    #             yield from self.get_field(value)
-    #         elif key == field:
-    #             yield value
-    #     return None
-    def get_field(self, field: str):
+    def get_field(self, field: str) -> json:
         return self.config[field]
 
     # take a config dict and save it
@@ -46,7 +37,7 @@ class Configuration:
     #     self.config = json.load(config_file)
     #     self.config[field.key] = field.value
         
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.config)
 
     @staticmethod
@@ -82,7 +73,7 @@ class Configuration:
                 "docker": ""
             }
         if not Configuration.__exists__('./data/default_config.json'):
-            with open('./data/default_config.json', 'w') as file:
+            with open('./user_data/default_config.json', 'w') as file:
                 json.dump(default_config, file, indent=4)
         return default_config
     

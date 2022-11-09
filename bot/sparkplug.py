@@ -1,4 +1,4 @@
-from config import Configuration as cf
+from configuration import Configuration as cf
 from universe import Universe
 from algorithm import Algorithm
 
