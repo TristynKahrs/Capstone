@@ -4,3 +4,4 @@ pandas
 ccxt
 ta-lib # bruh
 schedule
+mplfinance

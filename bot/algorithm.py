@@ -3,7 +3,7 @@ import pandas as pd
 import ccxt
 
 class Algorithm():
-    def __init__(self, ticker, **kwargs):
+    def __init__(self, **kwargs):
         pass
     
     def backtest(self):

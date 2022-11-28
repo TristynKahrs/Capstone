@@ -1,4 +1,4 @@
-from Capstone.bot.config import Configuration as cf
+from config import Configuration as cf
 
 class Universe():
     symbols = []

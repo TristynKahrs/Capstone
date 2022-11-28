@@ -2,8 +2,8 @@ import json
 import os
 
 class Configuration: # TODO: check if there is a singular config file
-    def __init__(self, config_file: str = './data/config.json') -> None: # TODO handle NoneType error TODO inherit from dict?
-        self.create_default_config()
+    def __init__(self, config_file: str = './config.json') -> None: # TODO handle NoneType error TODO inherit from dict?
+        # self.create_default_config()
         config_file = config_file.replace(' ', '_')
         
         self._base_config = {"exchange": {
