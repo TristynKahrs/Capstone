@@ -58,9 +58,15 @@ class IStrategy(ABC):
         dataframe['rsi'] = ta.RSI(dataframe, timeperiod=14)
         return dataframe
     
+    def entry_signal(self, dataframe):
+        return dataframe['rsi'] < 30
+    
+    def exit_signal(self, dataframe):
+        return dataframe['rsi'] > 70
+    
     def populate_entry_trend(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         conditions = []
-        conditions.append(dataframe['rsi'] < 30)
+        conditions.append(self.entry_signal(dataframe))
         if conditions:
             dataframe.loc[
                 reduce(lambda x, y: x & y, conditions),
@@ -69,7 +75,7 @@ class IStrategy(ABC):
     
     def populate_exit_trend(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         conditions = []
-        conditions.append(dataframe['rsi'] > 70)
+        conditions.append(self.exit_signal(dataframe))
         if conditions:
             dataframe.loc[
                 reduce(lambda x, y: x & y, conditions),
