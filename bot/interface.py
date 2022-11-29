@@ -1,37 +1,37 @@
 from os import system
 from functools import reduce
 from abc import ABC
-import math
-import time
-
-import ccxt
-import schedule
-from queue import Queue
 from bot.config import Configuration
-import pandas as pd
-import numpy as np
-import talib.abstract as ta
+from queue import Queue
 from termcolor import colored
+from time import gmtime, strftime
+
+import math, time, ccxt, schedule
+import pandas as pd, numpy as np, talib.abstract as ta, mplfinance as mpf, matplotlib.pyplot as plt
+
 import warnings
 warnings.filterwarnings("ignore")
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import mplfinance as mpf
 
-# import database
+timeframes = {
+    '1m' : 60,
+    '5m' : 300,
+    '15m': 900,
+    '1h' : 3600,
+    '1d' : 86400,
+    '1w' : 604800,
+    '1M' : 2592000,
+}
 
 class IStrategy(ABC):
     def __init__(self, ticker, config: Configuration):
         self.ticker = ticker
         self.config = config
         
-        # if config is passed in, use that
-        # if 'config' in kwargs:
-        #     self.config = kwargs['config']['algorithm']
+        # if config is passed in, use that, else use default, **kwargs
         if type(config) is Configuration:
             self.config = config.config
             
-        for key in ['exchange', 'algorithm']:
+        for key in ['exchange', 'algorithm', 'plot']:
             if key in self.config:
                 if type(self.config[key] is dict):
                     for subkey in self.config[key]:
@@ -41,6 +41,7 @@ class IStrategy(ABC):
             else:
                 # NOTE: set the attr here with a default value
                 raise KeyError(f'{key} must be specified')
+            
         self.open_pos = Queue(self.max_open_positions)
         
         exchange_class = getattr(ccxt, self.exchange_name)
@@ -52,8 +53,6 @@ class IStrategy(ABC):
             'options': { 'adjustForTimeDifference': True }
             })
         self.exchange.set_sandbox_mode(True)
-        
-        # run backtest?
     
     def populate_indicators(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         dataframe['rsi'] = ta.RSI(dataframe, timeperiod=14)
@@ -85,66 +84,40 @@ class IStrategy(ABC):
         return self.df
     
     def display(self, df):
-        print(colored('table updated: ' + str(df['timestamp'].iloc[-1]), 'blue'))
-        df.timestamp = pd.to_datetime(df.timestamp)
-        df.set_index('timestamp', inplace=True)
-        
-        # def animate(i):
-        #     timestamp = df['timestamp']
-        #     data = 0 # NOTE: get data from df
-        
-        #     plt.cla()
-            
-        #     plt.plot(timestamp, data, label='data', type='candle')
-        #     plt.tight_layout()
-        
-        # ani = FuncAnimation(plt.gcf(), animate, interval=1000)
-        # plt.show()
-        
-        # fig, axes = mpf.plot(df, figratio=(12, 8), type='candle',
-        #          style='yahoo', volume=True, mav=(5,10,20),
-        #          title=self.ticker, ylabel='Price',
-        #          ylabel_lower='Volume', tight_layout=True)
-        # mpf.show()
-        # for ax in axes:
-        #     ax.clear()
-        plt.close('all')
-        plt.pause(0.001)
-        fig, axes = mpf.plot(df, figratio=(12, 8), type='candle',
-                 style='yahoo', volume=True, mav=(5,10,20),
-                 title=self.ticker, ylabel='Price',
-                 ylabel_lower='Volume', tight_layout=True)
-        mpf.show()
-        # fig.cla()
-        
-        
-        # fig, axes = mpf.plot(df, type='candle', mav=mav_tuple, returnfig=True)
-        # # Configure chart legend and title
-        # axes[0].legend(mav_titles)
-        # axes[0].set_title(self.ticker)
-        
-        
-        # system('cls')
-        # color = []
-        # start_index, end_index = df.index[0], df.index[-1] + 1
-        # #print(start_index, end_index)
-        # for current in range(start_index, end_index):
-        #     #print(current)
-        #     try:
-        #         previous_close = df['close'][current - 1]
-        #     except (IndexError, KeyError):
-        #         previous_close = df['close'][current]
-        #     current_close = df['close'][current]
-        #     if current_close > previous_close:
-        #         color.append(colored(str(current_close), 'green'))
-        #     elif current_close < previous_close:
-        #         color.append(colored(str(current_close), 'red'))
-        #     else:
-        #         color.append(colored(str(current_close), 'white'))
-        # df.drop(columns=['close'], inplace=True)
-        # df['close'] = color
-        # print(df)
-        # print(colored('Open Positions: ' + str(self.open_pos.qsize()), 'grey'))
+        if self.show:
+            print(colored('table updated: ' + str(df['timestamp'].iloc[-1]), 'blue'))
+            df.timestamp = pd.to_datetime(df.timestamp)
+            df.set_index('timestamp', inplace=True)
+            fig, axes = mpf.plot(df, figratio=(12, 8), type='candle',
+                    style='yahoo', volume=True, mav=(5,10,20),
+                    title=self.ticker, ylabel='Price',
+                    ylabel_lower='Volume', tight_layout=True,
+                    returnfig=True)
+            mpf.show(block=False)
+            plt.pause(timeframes[self.timeframe] - 1)
+            plt.close()
+        else:
+            system('cls')
+            print(colored('table updated: ' + str(df['timestamp'].iloc[-1]), 'blue'))
+            color = []
+            df = df.tail(self.bars)
+            start_index, end_index = df.index[0], df.index[-1] + 1
+            for current in range(start_index, end_index):
+                try:
+                    previous_close = df['close'][current - 1]
+                except (IndexError, KeyError):
+                    previous_close = df['close'][current]
+                current_close = df['close'][current]
+                if current_close > previous_close:
+                    color.append(colored(str(current_close), 'green'))
+                elif current_close < previous_close:
+                    color.append(colored(str(current_close), 'red'))
+                else:
+                    color.append(colored(str(current_close), 'white'))
+            df.drop(columns=['close'], inplace=True)
+            df['close'] = color
+            print(df)
+            print(colored('Open Positions: ' + str(self.open_pos.qsize()), 'grey'))
     
     def enter_pos(self):
         print('\033[1m' + colored('entering position', 'green') + '\033[0m')
@@ -155,7 +128,7 @@ class IStrategy(ABC):
         print('balance_usdt: ' + str(balance_usdt), 'ticker_price: ' + str(ticker_price), 'stake_amount: ' + str(stake_amount))
         
         order = self.exchange.create_market_buy_order(self.ticker, stake_amount, {'trading_agreement':'agree'})
-        print(colored('bought ' + str(order['amount']) + ' ' + self.ticker + ' at ' + str(order['price']), 'green'))
+        print(colored('bought ' + str(order['amount']) + ' ' + self.ticker + ' at ' + str(strftime("%Y-%m-%d %H:%M:%S", gmtime())), 'green'))
         print(colored(order, 'green'))
         self.open_pos.put(order) # append new position to open_pos, save to db
         # exit()
@@ -166,12 +139,9 @@ class IStrategy(ABC):
         order = self.open_pos.get()
         order_amt = order['amount']
         
-        
         symbol = self.ticker[:self.ticker.index('/')]
         symbol_balance = self.exchange.fetch_balance()['free'][symbol]
         isclose = math.isclose(symbol_balance, order_amt, rel_tol=1e-4)
-        
-        # print('symbol: ', symbol, ', symbol_balance: ', symbol_balance, ', order_amt: ', order_amt, ', is_close: ', isclose)
         
         if(order_amt > symbol_balance):
             if isclose:
@@ -180,7 +150,7 @@ class IStrategy(ABC):
                 print('order amount was over the available balance, you should restart the bot and check your balances') 
                     
         order = self.exchange.create_market_sell_order(self.ticker, order_amt)
-        print(colored('sold ' + str(order['amount']) + ' ' + self.ticker + ' at ' + str(order['price']),'red'))
+        print(colored('sold ' + str(order['amount']) + ' ' + self.ticker + ' at ' + str(strftime("%Y-%m-%d %H:%M:%S", gmtime())),'red'))
         print(colored(order, 'red'))
         return order
         
@@ -206,7 +176,8 @@ class IStrategy(ABC):
     
     def run(self):
         try:
-            schedule.every(1).minute.do(self.check_buy_sell_signals) # NOTE: how do i change timeframe?
+            amt_time = 1 if self.show else timeframes[self.timeframe]
+            schedule.every(amt_time).seconds.do(self.check_buy_sell_signals) # NOTE: how do i change timeframe?
             try:
                 while True:
                     schedule.run_pending()
@@ -223,8 +194,6 @@ class IStrategy(ABC):
         # NOTE: analyze indicators and trends, generate report
     
     def exit_handler(self):
-        # NOTE: exit all positions and close all connections
-        # self.exchange.close_all_orders(self.ticker)
         print(colored('Exiting...', 'yellow'))
         for i in range(self.open_pos.qsize()):
             self.exit_pos()
