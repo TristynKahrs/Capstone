@@ -52,7 +52,7 @@ class IStrategy(ABC):
             'enableRateLimit': True,
             'options': { 'adjustForTimeDifference': True }
             })
-        self.exchange.set_sandbox_mode(True)
+        # self.exchange.set_sandbox_mode(True)
     
     def populate_indicators(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         dataframe['rsi'] = ta.RSI(dataframe, timeperiod=14)
@@ -92,13 +92,13 @@ class IStrategy(ABC):
     def display(self, df):
         if self.show:
             print(colored('table updated: ' + str(df['timestamp'].iloc[-1]), 'blue'))
-            df.timestamp = pd.to_datetime(df.timestamp)
+            df.timestamp = pd.to_datetime(df.timestamp, utc=True)
             df.set_index('timestamp', inplace=True)
             fig, axes = mpf.plot(df, figratio=(12, 8), type='candle',
-                    style='yahoo', volume=True, mav=(5,10,20),
+                    style=self.plot_style, volume=True,
                     title=self.ticker, ylabel='Price',
-                    ylabel_lower='Volume', tight_layout=True,
-                    returnfig=True)
+                    ylabel_lower='Volume', xlabel='Timestamp',
+                    tight_layout=True, returnfig=True)
             mpf.show(block=False)
             plt.pause(timeframes[self.timeframe] - 1)
             plt.close()
@@ -178,21 +178,22 @@ class IStrategy(ABC):
         if amt_open_pos > 0:
             if math.isnan(self.indicators['exit_long'][prev_row]) and self.indicators['exit_long'][last_row] == 1:
                 self.exit_pos()
+        self.display(self.indicators)
         return self.indicators
     
     def run(self):
+        # try:
+        amt_time = 1 if self.show else timeframes[self.timeframe]
+        schedule.every(amt_time).seconds.do(self.check_buy_sell_signals) # NOTE: how do i change timeframe?
         try:
-            amt_time = 1 if self.show else timeframes[self.timeframe]
-            schedule.every(amt_time).seconds.do(self.check_buy_sell_signals) # NOTE: how do i change timeframe?
-            try:
-                while True:
-                    schedule.run_pending()
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                self.exit_handler()
-        except Exception as e:
-            print(e)
+            while True:
+                schedule.run_pending()
+                time.sleep(1)
+        except KeyboardInterrupt:
             self.exit_handler()
+        # except Exception as e:
+        #     print(e)
+        #     self.exit_handler()
         
     def backtest(self):
         self.update_df()

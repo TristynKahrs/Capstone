@@ -1,12 +1,11 @@
 # My ignores
 !default_config.json
 *.json
-cli.py
-BollingerBands.py
-Crossover.py
-SimpleMovingAverage.py
-Supertrend.py
-temp.py
+
+!interface.py
+!config.py
+!__init__.py
+*.py
 
 
 # Byte-compiled / optimized / DLL files
