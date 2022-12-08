@@ -204,6 +204,8 @@ class IStrategy(ABC):
         print(colored('Exiting...', 'yellow'))
         for i in range(self.open_pos.qsize()):
             self.exit_pos()
+        if self.show:
+            plt.close()
         print(colored('exited gracefully', 'cyan'))
     
 if __name__ == '__main__':
